@@ -25,14 +25,16 @@ app.get('/tracking-pixel', async (req, res) => {
     // Extract user details from query parameters
     const { name, email } = req.query;
 
-    // Check if a user with the same name and email combination already exists
     try {
+        // Find the user with the same name and email combination
         let existingUser = await User.findOne({ name, email });
 
         if (existingUser) {
-            // If the user exists, update the timestamp by converting it to an array
-            existingUser.timestamp = [...existingUser.timestamp, new Date()];
-            await existingUser.save();
+            // If the user exists, update the timestamp array using $push
+            await User.updateOne(
+                { _id: existingUser._id },
+                { $push: { timestamp: new Date() } }
+            );
         } else {
             // If the user doesn't exist, create a new user
             const newUser = new User({
@@ -53,6 +55,7 @@ app.get('/tracking-pixel', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
 
 
 // Endpoint to retrieve user information from MongoDB

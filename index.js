@@ -1,11 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
+require('dotenv').config();
 
 const app = express();
-const port = 3010;
+const port = 3000;
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/tPixel');
+mongoose.connect(process.env.MONGO);
 const db = mongoose.connection;
 
 // Create a schema for user information

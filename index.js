@@ -61,16 +61,6 @@ app.get('/tracking-pixel', async (req, res) => {
     res.status(200).contentType('image/png').send(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/6r+RwAAAABJRU5ErkJggg==' , 'base64'));
 });
 
-// Endpoint to retrieve user information from MongoDB
-app.get('/user-info', async (req, res) => {
-    try {
-        const users = await User.find();
-        res.json(users);
-    } catch (error) {
-        console.error('Error retrieving user information:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
 
 // Start the server
 app.listen(port, () => {

@@ -33,7 +33,7 @@ app.get('/tracking-pixel', async (req, res) => {
             // If the user exists, update the timestamp array using $push
             await User.updateOne(
                 { _id: existingUser._id },
-                { $push: { timestamp: new Date() } }
+                { $push: { timestamp: new Date.now() } }
             );
         } else {
             // If the user doesn't exist, create a new user

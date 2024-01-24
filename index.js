@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
-const port = 3000;
+const port = 3010;
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO);
@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
     email: String,
     ipAddress: String,
     userAgent: String,
-    timestamp: { type: Date, default: Date.now }
+    timestamps: [{ type: Date, default: Date.now }]
 });
 
 // Create a model based on the schema
@@ -25,38 +25,41 @@ app.get('/tracking-pixel', async (req, res) => {
     // Extract user details from query parameters
     const { name, email } = req.query;
 
-    try {
-        // Find the user with the same name and email combination
-        let existingUser = await User.findOne({ name, email });
+    // Check if user with the same name and email exists
+    const existingUser = await User.findOne({ name, email });
 
-        if (existingUser) {
-            // If the user exists, update the timestamp array using $push
-            await User.updateOne(
-                { _id: existingUser._id },
-                { $push: { timestamp: new Date() } }
-            );
-        } else {
-            // If the user doesn't exist, create a new user
-            const newUser = new User({
-                name,
-                email,
-                ipAddress: req.ip,
-                userAgent: req.get('User-Agent'),
-                timestamp: [new Date()]  // Initialize timestamp as an array with the current date
-            });
-
-            await newUser.save();
+    if (existingUser) {
+        // If exists, update the existing document by pushing a new timestamp
+        existingUser.timestamps.push(new Date());
+        try {
+            await existingUser.save();
+        } catch (error) {
+            console.error('Error updating user information:', error);
+            res.status(500).send('Internal Server Error');
+            return;
         }
+    } else {
+        // If not exists, create a new user
+        const user = new User({
+            name,
+            email,
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent'),
+            timestamps: [new Date()]
+        });
 
-        // Send 1x1 transparent pixel
-        res.status(200).contentType('image/png').send(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/6r+RwAAAABJRU5ErkJggg==' , 'base64'));
-    } catch (error) {
-        console.error('Error processing tracking pixel request:', error);
-        res.status(500).send('Internal Server Error');
+        try {
+            await user.save();
+        } catch (error) {
+            console.error('Error saving user information:', error);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
     }
+
+    // Send 1x1 transparent pixel
+    res.status(200).contentType('image/png').send(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/6r+RwAAAABJRU5ErkJggg==' , 'base64'));
 });
-
-
 
 // Endpoint to retrieve user information from MongoDB
 app.get('/user-info', async (req, res) => {

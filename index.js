@@ -1,6 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const moment = require('moment-timezone');
 require('dotenv').config();
+
+// Set the default timezone for the application
+moment.tz.setDefault('Asia/Kolkata');
 
 const app = express();
 const port = 3010;
@@ -15,8 +19,13 @@ const userSchema = new mongoose.Schema({
     email: String,
     ipAddress: String,
     userAgent: String,
-    timestamps: [{ type: Date, default: Date.now }]
+    timestamps: [{
+        type: String,
+        default: () => moment().tz('Asia/Kolkata').format('DD/MM/YY HH:mm:ss.SSS')
+    }]
 });
+
+
 
 // Create a model based on the schema
 const User = mongoose.model('User', userSchema);
@@ -30,7 +39,7 @@ app.get('/tracking-pixel', async (req, res) => {
 
     if (existingUser) {
         // If exists, update the existing document by pushing a new timestamp
-        existingUser.timestamps.push(new Date());
+        existingUser.timestamps.push(moment().tz('Asia/Kolkata').format('DD/MM/YY HH:mm:ss.SSS'));
         try {
             await existingUser.save();
         } catch (error) {
@@ -45,7 +54,7 @@ app.get('/tracking-pixel', async (req, res) => {
             email,
             ipAddress: req.ip,
             userAgent: req.get('User-Agent'),
-            timestamps: [new Date()]
+            timestamps: [moment().tz('Asia/Kolkata').format('DD/MM/YY HH:mm:ss.SSS')]
         });
 
         try {
@@ -61,6 +70,22 @@ app.get('/tracking-pixel', async (req, res) => {
     res.status(200).contentType('image/png').send(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/6r+RwAAAABJRU5ErkJggg==' , 'base64'));
 });
 
+// Endpoint to retrieve user information from MongoDB
+app.get('/user-info', async (req, res) => {
+    const { pwd } = req.query;
+
+    try {
+        if (pwd === "auth29@") {
+            const users = await User.find();
+            res.json(users);
+        } else {
+            res.status(500).send('Server Error');
+        }
+    } catch (error) {
+        console.error('Error retrieving user information:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 // Start the server
 app.listen(port, () => {

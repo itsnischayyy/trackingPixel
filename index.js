@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
 // Create a model based on the schema
 const User = mongoose.model('User', userSchema);
 
-app.get('/tracking-pixel', async (req, res) => {
+app.get('/pixel', async (req, res) => {
     // Extract user details from query parameters
     const { name, email } = req.query;
 
